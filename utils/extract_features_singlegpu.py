@@ -30,6 +30,8 @@ from bua.caffe.modeling.box_regression import BUABoxes
 from torch.nn import functional as F
 from detectron2.modeling import postprocessing
 
+from tqdm import tqdm
+
 def switch_extract_mode(mode):
     if mode == 'roi_feats':
         switch_cmd = ['MODEL.BUA.EXTRACTOR.MODE', 1]
@@ -85,12 +87,14 @@ def extract_feat_singlegpu(split_idx, img_list, cfg, args):
     print('Number of images on split{}: {}.'.format(split_idx, num_images))
 
     model = DefaultTrainer.build_model(cfg)
+    # torch.cuda.set_device(args.gpu_id)
+    model.cuda()
     DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
         cfg.MODEL.WEIGHTS, resume=args.resume
     )
     model.eval()
 
-    for im_file in (img_list):
+    for im_file in tqdm(img_list):
         if os.path.exists(os.path.join(args.output_dir, im_file.split('.')[0]+'.npz')):
             continue
         im = cv2.imread(os.path.join(args.image_dir, im_file))
@@ -201,7 +205,11 @@ def main():
     extract_feat_singlegpu_start(args,cfg)
 
 def extract_feat_singlegpu_start(args,cfg):
-    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
+    print(args.gpu_id)
+    # os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
+    print(torch.cuda.current_device())#查询当前可见的显卡
+    print(torch.cuda.device_count()) #当前可用显卡个数
+    torch.cuda.set_device(0)
     num_gpus = len(args.gpu_id.split(','))
 
     MIN_BOXES = cfg.MODEL.BUA.EXTRACTOR.MIN_BOXES

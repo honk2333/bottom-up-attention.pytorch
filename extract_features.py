@@ -141,6 +141,7 @@ def main():
     args = parser.parse_args()
 
     cfg = setup(args)
+    print(cfg)
     num_gpus = len(args.gpu_id.split(','))
     print(args.mode)
     if args.mode == "caffe":
